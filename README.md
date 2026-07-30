@@ -51,6 +51,7 @@
 ### 安装依赖
 ```bash
 pip install botpy
+```
 配置账号信息
 打开 main.py，找到启动代码：
 python
@@ -59,8 +60,9 @@ client.run(appid=APPID, secret=APPSECRET)
 替换为你在【QQ 开放平台】申请机器人得到的 AppID 和 AppSecret。
 同时修改代码内机器人自身 app_id 常量。
 启动机器人
-bash
+```bash
 python main.py
+```
 📝 使用指令（群聊）
 所有指令支持直接发送 或者 @机器人 + 指令
 表格
@@ -71,13 +73,6 @@ python main.py
 /退出复读机	关闭复读模式
 /随机C图	随机一张 COS 图片
 /随机C帖	随机一套 COS 帖子
-⚠️ 常见问题
-40034006 消息内容违规
-Markdown 内嵌大量图片链接容易触发风控，建议图片改用文件接口发送。
-50015006 系统繁忙
-平台限流，建议增加重试 + 延时逻辑。
-Markdown 发送报错
-被动回复 message.reply () 普通群消息不支持 markdown，使用 api.post_group_message 主动消息。
 License
 仅供学习交流使用。
 一切使用行为产生的账号风险、合规风险由使用者自行承担。
