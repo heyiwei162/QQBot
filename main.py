@@ -230,7 +230,7 @@ class MyBot(botpy.Client):
                     await self.send_cos_tips(user_openid, 0)
                     pass
                 elif data == 'bot_menu':
-                    await self.api.post_group_message(openid=user_openid,
+                    await self.api.post_c2c_message(openid=user_openid,
                                 msg_type=2,
                                 markdown={'content':f"功能"},
                                 keyboard = main_menu)
@@ -264,7 +264,7 @@ class MyBot(botpy.Client):
                     
         user_id = kwargs.get("user_id", None)
         if user_id is not None:
-            msg += f"<qqbot-at-user id=\"{user_id}\" />"
+            msg += f"<qqbot-at-user id=\"{user_id}\" />\n"
         msg += f"标题:{title}\n发布时间{time}\n"
 
         if k:
@@ -274,7 +274,7 @@ class MyBot(botpy.Client):
                 await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':f"标题:{title}\n发布时间{time}\n"},keyboard=cos_tips_again_menu)
         else:
             if type == 0:
-                await self.api.post_c2c_message(openid=openid,msg_type=2,msg_type=2,markdown={'content':msg},keyboard=cos_tips_again_menu)
+                await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':msg},keyboard=cos_tips_again_menu)
             elif type == 1:
                 await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':msg},keyboard=cos_tips_again_menu)
 
@@ -298,7 +298,7 @@ class MyBot(botpy.Client):
         else:
             k = False
         url = random.choice(urls)
-        _log.info(f"找到的图")
+        _log.info(f"找到的图{url}")
         msg += f"![text #{url["width"]}px #{url["height"]}px]({url["url"]})\n"
         if k:
             if type == 0:
@@ -312,14 +312,14 @@ class MyBot(botpy.Client):
 
         if k:
             if type == 0:
-                await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':f"标题:{title}\n发布时间{time}\n"},keyboard=cos_tips_again_menu)
+                await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':f"\n"},keyboard=cos_again_menu)
             elif type == 1:
-                await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':f"标题:{title}\n发布时间{time}\n"},keyboard=cos_tips_again_menu)
+                await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':f"\n"},keyboard=cos_again_menu)
         else:
             if type == 0:
-                await self.api.post_c2c_message(openid=openid,msg_type=2,msg_type=2,markdown={'content':msg},keyboard=cos_tips_again_menu)
+                await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':msg},keyboard=cos_again_menu)
             elif type == 1:
-                await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':msg},keyboard=cos_tips_again_menu)
+                await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':msg},keyboard=cos_again_menu)
                                   
     async def repeater(self,message:C2CMessage|GroupMessage,**kwargs):
         global main_menu, repeater_menu
