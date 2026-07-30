@@ -33,16 +33,16 @@
 - 消息发送简易异常兼容
 
 ## 📁 项目文件结构
->├── main.py # 机器人主程序、事件逻辑、所有功能实现
->├── cos_all.json # COS 图库数据源
->├── json/
->│ ├── menu.json # 主功能按钮菜单
->│ ├── repeater_menu.json # 复读机模式按钮菜单
->│ ├── cos_again_menu.json
->│ └── cos_tips_again_menu.json
->├── venv/ # Python 虚拟环境（.gitignore 忽略）
->├── .gitignore # Git 忽略配置
->└── README.md # 项目说明文档
+>├── main.py # 机器人主程序、事件逻辑、所有功能实现\u200B
+>├── cos_all.json # COS 图库数据源\u200B
+>├── json/\u200B
+>│ ├── menu.json # 主功能按钮菜单\u200B
+>│ ├── repeater_menu.json # 复读机模式按钮菜单\u200B
+>│ ├── cos_again_menu.json\u200B
+>│ └── cos_tips_again_menu.json\u200B
+>├── venv/ # Python 虚拟环境（.gitignore 忽略）\u200B
+>├── .gitignore # Git 忽略配置\u200B
+>└── README.md # 项目说明文档\u200B
 
 ## ⚙️ 环境部署
 ### Python 版本
@@ -67,12 +67,12 @@ python main.py
 所有指令支持直接发送 或者 @机器人 + 指令
 表格
 指令	功能
->/菜单	弹出功能菜单
->/问好	Ciallo 打招呼
->/复读机	开启复读模式
->/退出复读机	关闭复读模式
->/随机C图	随机一张 COS 图片
->/随机C帖	随机一套 COS 帖子
+>/菜单	弹出功能菜单\u200B
+>/问好	Ciallo 打招呼\u200B
+>/复读机	开启复读模式\u200B
+>/退出复读机	关闭复读模式\u200B
+>/随机C图	随机一张 COS 图片\u200B
+>/随机C帖	随机一套 COS 帖子\u200B
 License
 仅供学习交流使用。
 一切使用行为产生的账号风险、合规风险由使用者自行承担。
