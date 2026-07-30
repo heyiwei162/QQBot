@@ -250,33 +250,22 @@ class MyBot(botpy.Client):
         title = cos["title"]
         time = cos["publish_time"]
         msg = ""
-        if urls[0]["width"] == 0:
-            k = True
-        else:
-            k = False
         for url in urls:
             msg += f"![text #{url["width"]}px #{url["height"]}px]({url["url"]})\n"
-            if k:
-                if type == 0:
-                    await self.api.post_c2c_file(openid=openid,file_type=1,url=url,srv_send_msg=True)
-                elif type == 1:
-                    await self.api.post_group_file(group_openid=openid, file_type=1,url=url,srv_send_msg=True)
+            if type == 0:
+                await self.api.post_c2c_file(openid=openid,file_type=1,url=url,srv_send_msg=True)
+            elif type == 1:
+                await self.api.post_group_file(group_openid=openid, file_type=1,url=url,srv_send_msg=True)
                     
         user_id = kwargs.get("user_id", None)
         if user_id is not None:
             msg += f"<qqbot-at-user id=\"{user_id}\" />\n"
         msg += f"标题:{title}\n发布时间{time}\n"
 
-        if k:
-            if type == 0:
-                await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':f"标题:{title}\n发布时间{time}\n"},keyboard=cos_tips_again_menu)
-            elif type == 1:
-                await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':f"标题:{title}\n发布时间{time}\n"},keyboard=cos_tips_again_menu)
-        else:
-            if type == 0:
-                await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':msg},keyboard=cos_tips_again_menu)
-            elif type == 1:
-                await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':msg},keyboard=cos_tips_again_menu)
+        if type == 0:
+            await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':f"标题:{title}\n发布时间{time}\n"},keyboard=cos_tips_again_menu)
+        elif type == 1:
+            await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':f"标题:{title}\n发布时间{time}\n"},keyboard=cos_tips_again_menu)
 
     async def send_cos_img(self,openid, type, **kwargs):
         """
