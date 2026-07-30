@@ -1,0 +1,66 @@
+{
+    "content": {
+        "rows": [
+            {
+            "buttons": [{
+                "id": "bot_say_hello",
+                "render_data": {
+                    "label": "问好",
+                    "style": 0
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/问好"
+                }
+            }]},
+            {
+            "buttons":[{
+                "id": "bot_random_cos_tips",
+                "render_data": {
+                    "label": "随机C帖",
+                    "style": 0
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/随机C帖"
+                }
+            }]},
+            {
+            "buttons":[{
+                "id": "bot_random_cos",
+                "render_data": {
+                    "label": "随机C图",
+                    "style": 0
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/随机C图"
+                }
+            }]},
+            {
+            "buttons":[{
+                "id": "bot_return",
+                "render_data": {
+                    "label": "复读机",
+                    "style": 0
+                },
+                "action": {
+                    "type": 2,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/复读机"
+                }
+            }]}
+        ]
+    }
+}

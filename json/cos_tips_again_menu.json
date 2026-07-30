@@ -1,0 +1,34 @@
+{
+    "content": {
+        "rows": [
+            {
+            "buttons":[{
+                "id": "bot_random_cos_tips",
+                "render_data": {
+                    "label": "再来一帖",
+                    "style": 4
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/随机C帖"
+                }},
+                {
+                "id": "bot_menu",
+                "render_data": {
+                    "label": "菜单",
+                    "style": 0
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/菜单"
+                }
+            }]
+        }]
+    }
+}

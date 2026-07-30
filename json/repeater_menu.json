@@ -1,0 +1,21 @@
+{
+    "content": {
+        "rows": [{
+            "buttons": [
+            {
+                "id": "bot_exit",
+                "render_data": {
+                    "label": "退出复读机",
+                    "style": 1
+                },
+                "action": {
+                    "type": 2,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/退出复读机"
+                }
+            }]
+        }]
+    }
+}
