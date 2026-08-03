@@ -24,19 +24,6 @@
 - 私聊消息全自动智能响应
 - 好友新增/删除、机器人入群/退群事件监听，入群自动推送欢迎语
 
-### 🔁 群复读机系统
-- 指令 `/复读机` 开启群内消息自动复读
-- 支持文字、图片附件复读，图片自动转为Markdown图片格式
-- `/退出复读机` 一键关闭复读
-- 内置过滤规则，忽略机器人自身消息，杜绝自循环刷屏
-
-### 🖼 COS图库系统
-数据源本地存储：`cos_all.json`
-| 指令 | 功能说明 |
-|------|----------|
-| `/随机C图` | 随机抽取单张COS图片推送 |
-| `/随机C帖` | 整套帖子推送（帖子标题+发布时间+限定数量图片） |
-配套交互按钮，点击一键刷新重新抽取图片。
 
 ### 🎛 按钮交互（Interaction 交互事件）
 依托平台原生按钮交互体系：
@@ -51,16 +38,17 @@
 
 ## 📁 项目目录结构
 ```bash
-├── main.py # 程序入口，全部事件、业务逻辑主文件  <br>
-├── cos_all.json # COS 图库本地数据源  <br>
-├── json/  <br>
-│ ├── menu.json # 主功能菜单按钮配置  <br>
-│ ├── repeater_menu.json # 复读机模式按钮菜单  <br>
-│ ├── cos_again_menu.json  <br>
-│ └── cos_tips_again_menu.json  <br>
-├── venv/ # Python 虚拟环境（.gitignore 自动忽略）  <br>
-├── .gitignore # Git 提交忽略配置  <br>
-└── README.md # 项目说明文档  <br>
+├── main.py # 程序入口，全部事件、业务逻辑主文件
+├── cos_all.json # COS 图库本地数据源
+├── json/
+│ ├── menu.json # 主功能菜单按钮配置
+│ ├── repeater_menu.json # 复读机模式按钮菜单
+│ ├── cos_again_menu.json
+│ ├── cos_tips_again_menu.json
+│ └── setting_menu.json # APPID,APPSECRET存放地
+├── venv/ # Python 虚拟环境（.gitignore 自动忽略）
+├── .gitignore # Git 提交忽略配置
+└── README.md # 项目说明文档
 ```
 
 ## ⚙️ 部署安装教程
@@ -71,19 +59,19 @@
 ```bash
 pip install botpy
 ```
-2. 平台配置
+### 2. 平台配置
 前往【QQ 开放平台】创建机器人应用，获取 AppID、AppSecret；  <br>
 打开 main.py，修改底部启动代码：  <br>
 python  <br>
 运行  <br>
-# 将下方参数替换为你自己申请的凭证  <br>
+#### 将下方参数替换为你自己申请的凭证  <br>
 在./json/setting.json文件下添加  <br>
 {  <br>
  "APPID": "XXXXXX",  <br>
  "APPSECRET": "XXXXXXXXXX"  <br>
 }  <br>
 同步修改代码内全局机器人自身 AppID 常量。  <br>
-3. 启动运行  <br>
+### 3. 启动运行  <br>
 ```bash
 python main.py
 ```
@@ -98,13 +86,12 @@ python main.py
 |/退出复读机|	关闭复读功能|
 |/随机C图|	随机单张 COS 图|
 |/随机C帖|	随机整套 COS 帖子|
-```
 
-###🚨 已知特殊改动 & 常见报错说明
-本项目对原生 botpy 源码进行局部二次修改：
-1.新增 on_message_create 普通消息监听事件
-2.内置封装 interaction.react() 交互回执接口，解决按钮超时转圈
-3.高频报错 40011000 请求数据异常：
-4.COS 批量发图接口限流，已内置单图间隔延时、单次最大图片数量限制。
-License
-仅用于个人学习交流，禁止商用二次分发。
+### 🚨 已知特殊改动 & 常见报错说明
+本项目对原生 botpy 源码进行局部二次修改：  <br>
+1.新增 on_message_create 普通消息监听事件  <br>
+2.内置封装 interaction.react() 交互回执接口，解决按钮超时转圈  <br>
+3.高频报错 40011000 请求数据异常：  <br>
+4.COS 批量发图接口限流，已内置单图间隔延时、单次最大图片数量限制。  <br>
+## License  <br>
+仅用于个人学习交流，禁止商用二次分发。  <br>
