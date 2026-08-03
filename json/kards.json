@@ -3,9 +3,54 @@
         "rows": [
             {
             "buttons": [{
-                "id": "bot_say_hello",
+                "id": "kards_enter_turn",
                 "render_data": {
-                    "label": "问好",
+                    "label": "结束回合",
+                    "style": 4
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/结束回合"
+                }
+            }]},
+            {
+            "buttons":[{
+                "id": "kards_add_com_point",
+                "render_data": {
+                    "label": "增加一个指挥点",
+                    "style": 4
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/增加指挥点"
+                }
+            }]},
+            {
+            "buttons":[{
+                "id": "kards_sub_com_point",
+                "render_data": {
+                    "label": "减少一个指挥点",
+                    "style": 4
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/减少指挥点"
+                }
+            }]},
+            {
+            "buttons":[{
+                "id": "bot_menu",
+                "render_data": {
+                    "label": "菜单",
                     "style": 0
                 },
                 "action": {
@@ -13,67 +58,7 @@
                     "permission": {
                         "type": 2
                     },
-                "data": "/问好"
-                }
-            }]},
-            {
-            "buttons":[{
-                "id": "bot_random_cos_tips",
-                "render_data": {
-                    "label": "随机C帖",
-                    "style": 0
-                },
-                "action": {
-                    "type": 1,
-                    "permission": {
-                        "type": 2
-                    },
-                "data": "/随机C帖"
-                }
-            }]},
-            {
-            "buttons":[{
-                "id": "bot_random_cos",
-                "render_data": {
-                    "label": "随机C图",
-                    "style": 0
-                },
-                "action": {
-                    "type": 1,
-                    "permission": {
-                        "type": 2
-                    },
-                "data": "/随机C图"
-                }
-            }]},
-            {
-            "buttons":[{
-                "id": "bot_return",
-                "render_data": {
-                    "label": "复读机",
-                    "style": 0
-                },
-                "action": {
-                    "type": 2,
-                    "permission": {
-                        "type": 2
-                    },
-                "data": "/复读机"
-                }
-            }]},
-            {
-            "buttons":[{
-                "id": "bot_kards",
-                "render_data": {
-                    "label": "kards指挥点帮助",
-                    "style": 0
-                },
-                "action": {
-                    "type": 1,
-                    "permission": {
-                        "type": 2
-                    },
-                "data": "/kards"
+                "data": "/菜单"
                 }
             }]}
         ]
