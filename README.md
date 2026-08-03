@@ -51,18 +51,16 @@
 
 ## 📁 项目目录结构
 ```bash
-text/
-├── main.py # 程序入口，全部事件、业务逻辑主文件
-├── cos_all.json # COS 图库本地数据源
-├── json/
-│ ├── menu.json # 主功能菜单按钮配置
-│ ├── repeater_menu.json # 复读机模式按钮菜单
-│ ├── cos_again_menu.json
-│ └── cos_tips_again_menu.json
-├── venv/ # Python 虚拟环境（.gitignore 自动忽略）
-├── .gitignore # Git 提交忽略配置
-└── README.md # 项目说明文档
-plaintext
+├── main.py # 程序入口，全部事件、业务逻辑主文件  <br>
+├── cos_all.json # COS 图库本地数据源  <br>
+├── json/  <br>
+│ ├── menu.json # 主功能菜单按钮配置  <br>
+│ ├── repeater_menu.json # 复读机模式按钮菜单  <br>
+│ ├── cos_again_menu.json  <br>
+│ └── cos_tips_again_menu.json  <br>
+├── venv/ # Python 虚拟环境（.gitignore 自动忽略）  <br>
+├── .gitignore # Git 提交忽略配置  <br>
+└── README.md # 项目说明文档  <br>
 ```
 
 ## ⚙️ 部署安装教程
@@ -72,31 +70,34 @@ plaintext
 ### 1. 安装依赖
 ```bash
 pip install botpy
+```
 2. 平台配置
-前往【QQ 开放平台】创建机器人应用，获取 AppID、AppSecret；
-打开 main.py，修改底部启动代码：
-python
-运行
-# 将下方参数替换为你自己申请的凭证
-在./json/setting.json文件下添加
-{
- "APPID": "XXXXXX",
- "APPSECRET": "XXXXXXXXXX"
-}
-同步修改代码内全局机器人自身 AppID 常量。
-3. 启动运行
-bash
+前往【QQ 开放平台】创建机器人应用，获取 AppID、AppSecret；  <br>
+打开 main.py，修改底部启动代码：  <br>
+python  <br>
+运行  <br>
+# 将下方参数替换为你自己申请的凭证  <br>
+在./json/setting.json文件下添加  <br>
+{  <br>
+ "APPID": "XXXXXX",  <br>
+ "APPSECRET": "XXXXXXXXXX"  <br>
+}  <br>
+同步修改代码内全局机器人自身 AppID 常量。  <br>
+3. 启动运行  <br>
+```bash
 python main.py
+```
 📝 群聊可用指令表
 支持两种触发方式：直接发送指令 / @机器人 + 指令
 表格
-指令	功能
-/菜单	弹出交互式功能按钮菜单
-/问好	机器人回复打招呼文案
-/复读机	开启当前群复读模式
-/退出复读机	关闭复读功能
-/随机C图	随机单张 COS 图
-/随机C帖	随机整套 COS 帖子
+|指令	|功能|
+|---|---|
+|/菜单|	弹出交互式功能按钮菜单|
+|/问好|	机器人回复打招呼文案|
+|/复读机|	开启当前群复读模式|
+|/退出复读机|	关闭复读功能|
+|/随机C图|	随机单张 COS 图|
+|/随机C帖|	随机整套 COS 帖子|
 ```
 
 ###🚨 已知特殊改动 & 常见报错说明
