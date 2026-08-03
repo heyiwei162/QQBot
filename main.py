@@ -1,6 +1,6 @@
 import botpy
 from botpy.message import C2CMessage, GroupMessage
-from botpy.manage import GroupManageEvent
+from botpy.manage import GroupManageEvent, C2CManageEvent
 from botpy.interaction import Interaction
 from botpy.client import _log
 import re,json,random,time
@@ -21,7 +21,7 @@ kards_mode = {'c2c':{},
               'group':{}}
 
 
-with open("./cos_all.json", "r", encoding="utf-8") as f:
+with open("./json/cos_all.json", "r", encoding="utf-8") as f:
     cos_data = json.load(f)
 
 # 读取菜单
@@ -43,7 +43,8 @@ with open("./json/setting.json", "r", encoding="utf-8") as f:
 class MyBot(botpy.Client):
     async def on_ready(self):
         _log.info("机器人上线成功，等待私聊消息...")
-        self.app_id = await self.api.me().get('union_openid')
+        resp = await self.api.me()
+        self.app_id = resp.get("union_openid")
         if not self.app_id:
             self.app_id = "726B489C13804741B9AD1DCA6879CC45"
         _log.info(f"app_id获取结果{self.app_id}")
@@ -59,7 +60,7 @@ class MyBot(botpy.Client):
     async def on_c2c_message_create(self, message: C2CMessage):
         user_openid = message.author.user_openid
         _log.info(f"user_openid: {user_openid}")
-        await add_data(data=user_openid, chat_type=0)
+        await add_data(data=user_openid,file=chat_json_file, chat_type=0)
 
         msg = [s.strip() for s in message.content if s.strip()]
         content = ''
@@ -78,13 +79,19 @@ class MyBot(botpy.Client):
         else:
             await message.reply(msg_type = 2,markdown={'content':"功能"}, keyboard = main_menu)
 
-    async def on_friend_add(self,event):
+    async def on_friend_add(self,event: C2CManageEvent):
         user_openid = event.user_openid
+        event_id = event.event_id
         _log.info(f"新增好友：{user_openid}")
         # 存入私聊列表 type=0
+        await self.api.post_c2c_message(openid=user_openid,
+                                msg_type=2,
+                                markdown={'content':"你好我是少女"},
+                                keyboard = main_menu,
+                                msg_id = event_id)
         await add_data(data=user_openid, file=chat_json_file, chat_type=0)
 
-    async def on_friend_del(self,event):
+    async def on_friend_del(self,event: C2CManageEvent):
         user_openid = event.user_openid
         _log.info(f"删除：{user_openid}")
         # 存入私聊列表 type=0
@@ -186,7 +193,7 @@ class MyBot(botpy.Client):
 
         await add_data(data=group_openid, file=chat_json_file, chat_type=1)
 
-    async def on_group_del_robot(self, event):
+    async def on_group_del_robot(self, event: GroupManageEvent):
         group_openid = event.group_openid
         op_member = event.op_member_openid
         event_id = event.event_id
@@ -336,9 +343,8 @@ class MyBot(botpy.Client):
                 await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':msg},keyboard=cos_again_menu)
                                   
     async def repeater(self,message:C2CMessage|GroupMessage,**kwargs):
-        global main_menu, repeater_menu
         content = message.content
-        if content == "/退出复读机":
+        if content == f"<@{self.app_id}>/退出复读机":
             _log.info("解除复读")
             repeater_mode[message.group_openid] = False
             return 
@@ -497,6 +503,8 @@ class MyBot(botpy.Client):
 
 if __name__ == "__main__":
     
-    intents = botpy.Intents(public_messages=True, interaction=True)
+    intents = botpy.Intents(public_messages=True,
+                            public_guild_messages=True,
+                            interaction=True)
     client = MyBot(intents=intents)
     client.run(appid=APPID, secret=APPSECRET)
