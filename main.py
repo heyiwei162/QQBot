@@ -6,6 +6,7 @@ from botpy.client import _log
 import re,json,random,time
 
 from save import *
+#from AI import *
 from search import search_by_text
 
 MAX_RETRY = 5
@@ -14,7 +15,6 @@ pattern = r'(?:^|>)([^<>]+)(?:<|$)'
 ciallo_url = "https://ts2.tc.mm.bing.net/th/id/OIP-C.zOuxHjLVBFflqmmOx-6LAAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
 chat_json_file = "./json/chat_list.json"
 game_json_file = "./json/game_list.json"
-
 repeater_mode = {}
 kards_is_connection = False
 kards_mode = {'c2c':{},
@@ -23,7 +23,6 @@ kards_mode = {'c2c':{},
 
 with open("./json/cos_all.json", "r", encoding="utf-8") as f:
     cos_data = json.load(f)
-
 # 读取菜单
 with open("./json/menu.json", "r", encoding="utf-8") as f:
     main_menu = json.load(f)
@@ -39,6 +38,8 @@ with open("./json/setting.json", "r", encoding="utf-8") as f:
     data = json.load(f)
     APPID = data.get("APPID")
     APPSECRET = data.get("APPSECRET")
+with open("./json/ban.json", "r", encoding="utf-8") as f:
+    ban_id = json.load(f)
 
 class MyBot(botpy.Client):
     async def on_ready(self):
@@ -52,7 +53,8 @@ class MyBot(botpy.Client):
         groups = await get_all_data(file=chat_json_file, chat_type=1)
         msg = f"![text #500px #500px]({ciallo_url}) 已上线!"
         for id in users:
-            await self.api.post_c2c_message(openid=id, msg_type=2, markdown={'content':msg}, keyboard=main_menu)
+            #await self.api.post_c2c_message(openid=id, msg_type=2, markdown={'content':msg}, keyboard=main_menu)
+            ...
         for id in groups:
             #await self.api.post_group_message(group_openid=id, msg_type=2, markdown={'content':msg}, keyboard=main_menu)
             ...
@@ -137,6 +139,9 @@ class MyBot(botpy.Client):
                     await message.reply(msg_type=2,markdown={'content':f"掷骰子结果:{r1}+{r2}={r}喵~"},msg_seq=1)
             else:
                 await message.reply(msg_type=2,markdown={'content':f"掷骰子结果:{r1}+{r2}={r}"},msg_seq=1)
+        else:
+            content = await AIrequest("POST", "https://qianfan.baidubce.com/v2/chat/completions", content)
+            print(content.json())
 
     async def on_group_message_create(self, message: GroupMessage):
         group_openid = message.group_openid
@@ -151,6 +156,10 @@ class MyBot(botpy.Client):
             content += m
         message.content = content
         _log.info(f"【群聊】消息内容: {content}")
+
+        if user_openid in ban_id.get(group_openid, []):
+            await message.cencel()
+            return
 
         if repeater_mode.get(group_openid) and user_openid != self.app_id:
             content = await self.repeater(message)
@@ -493,7 +502,7 @@ class MyBot(botpy.Client):
             if data:
                 for d in data:
                     if time.time() - d['time'] > 3600 * 24:
-                        await remove_data(data=d, file=game_json_file, type=1)
+                        await remove_data(data=d, file=game_json_file, chat_type=1)
                     else:
                         if d['type'] == 3:
                             msg += '主人'
@@ -502,7 +511,6 @@ class MyBot(botpy.Client):
         return msg
 
 if __name__ == "__main__":
-    
     intents = botpy.Intents(public_messages=True,
                             public_guild_messages=True,
                             interaction=True)
