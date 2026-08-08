@@ -140,7 +140,7 @@ class MyBot(botpy.Client):
             else:
                 await message.reply(msg_type=2,markdown={'content':f"掷骰子结果:{r1}+{r2}={r}"},msg_seq=1)
         else:
-            content = await AIrequest("POST", "https://qianfan.baidubce.com/v2/chat/completions", content)
+            #content = await AIrequest("POST", "https://qianfan.baidubce.com/v2/chat/completions", content)
             print(content.json())
 
     async def on_group_message_create(self, message: GroupMessage):
