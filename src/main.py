@@ -1,4 +1,3 @@
-import botpy
 from botpy.message import C2CMessage, GroupMessage
 from botpy.manage import GroupManageEvent, C2CManageEvent
 from botpy.interaction import Interaction
@@ -6,41 +5,75 @@ from botpy.client import _log
 from pixivpy3 import AppPixivAPI
 from PIL import Image
 from io import BytesIO
-import re,json,random,time, requests, asyncio
 
+
+import botpy
+import re
+import json
+import random
+import time
+import requests
+import asyncio
+import os
+
+from config import BASE_DIR
 from save import *
 #from AI import *
+from upload import *
 from search import search_by_text
 
-
-# os.environ["HTTP_PROXY"] = "http://127.0.0.1:12334"
-# os.environ["HTTPS_PROXY"] = "http://127.0.0.1:12334"
-# os.environ["ALL_PROXY"] = "socks5://127.0.0.1:12334"
-
+# Pixiv 请求头（缺一容易403）
+PIXIV_HEADERS = {
+    "Referer": "https://www.pixiv.net/",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
+# 仅图片下载使用这个带代理的session
+pixiv_download_session = requests.Session()
 proxies = {"http":"http://127.0.0.1:12334","https":"http://127.0.0.1:12334"}
-
+pixiv_download_session.proxies = proxies
 
 # 粘贴你从json里提取的refresh_token
 with open('json/pixiv_auth.json', 'r', encoding='utf-8') as f:
     refresh_token_str = json.load(f)['refresh_token']
 
-# 创建API实例
-p_api = AppPixivAPI()
-#p_api.auth(refresh_token=refresh_token_str)
+# 自定义带代理的请求包装器
+class PixivProxySession:
+    def __init__(self, proxy_url="http://127.0.0.1:12334"):
+        self.proxy = {
+            "http": proxy_url,
+            "https": proxy_url
+        }
+        self.session = requests.Session()
+
+    def get(self, url, **kwargs):
+        kwargs["proxies"] = self.proxy
+        return self.session.get(url,** kwargs)
+
+    def post(self, url, **kwargs):
+        kwargs["proxies"] = self.proxy
+        return self.session.post(url, **kwargs)
+
+
+
  
 
 MAX_RETRY = 5
 
 pattern = r'(?:^|>)([^<>]+)(?:<|$)'
 ciallo_url = "https://ts2.tc.mm.bing.net/th/id/OIP-C.zOuxHjLVBFflqmmOx-6LAAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
-chat_json_file = "../json/chat_list.json"
-game_json_file = "../json/game_list.json"
+BASE_DIR =  os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..'))
+
+chat_json_file = os.path.join(BASE_DIR,"json","chat_list.json")
+game_json_file = os.path.join(BASE_DIR,"json","game_list.json")
+ban_json_file = os.path.join(BASE_DIR,"json","ban_list.json")
+p_path = os.path.join(BASE_DIR,"p")
+sound_path = os.path.join(BASE_DIR,"audio")
 repeater_mode = {}
 kards_is_connection = False
 kards_mode = {'c2c':{},
               'group':{}}
 
-with open("../json/setting.json", "r", encoding="utf-8") as f:
+with open(os.path.join(BASE_DIR,"json","setting.json"), "r", encoding="utf-8") as f:
     data = json.load(f)
     APPID = data.get("APPID")
     APPSECRET = data.get("APPSECRET")
@@ -67,7 +100,7 @@ class MyBot(botpy.Client):
     async def on_c2c_message_create(self, message: C2CMessage):
         user_openid = message.author.user_openid
         _log.info(f"user_openid: {user_openid}")
-        await add_data(data=user_openid,file=chat_json_file, chat_type=0)
+        await add_data(item=user_openid,file=chat_json_file, chat_type=0)
 
         msg = [s.strip() for s in message.content if s.strip()]
         content = ''
@@ -83,6 +116,18 @@ class MyBot(botpy.Client):
         elif "早上好" == content  or "/问好" == content:
             msg = f"![text #500px #500px]({ciallo_url}) Ciallo～(∠・ω< )⌒★"
             await message.reply(msg_type = 2,markdown={'content':msg}, keyboard = self.main_menu)
+        elif "/随机音效" == content:
+            try:
+                audio = await random_pick_audio(sound_path)
+                _log.debug(f"音频路径:{audio}")
+                url = await upload_audio_cached(os.path.join(sound_path, audio))
+                _log.debug(f"音频链接:{url}")
+                while True:
+                    resp = await self.api.post_c2c_file(openid=user_openid, file_type=3, url=url, srv_send_msg=True)
+                    if resp:
+                        return
+            except Exception as e:
+                _log.error(e)
         else:
             await message.reply(msg_type = 2,markdown={'content':"功能"}, keyboard = self.main_menu)
 
@@ -96,7 +141,7 @@ class MyBot(botpy.Client):
                                 markdown={'content':"你好我是少女"},
                                 keyboard = self.main_menu,
                                 msg_id = event_id)
-        await add_data(data=user_openid, file=chat_json_file, chat_type=0)
+        await add_data(item=user_openid, file=chat_json_file, chat_type=0)
 
     async def on_friend_del(self,event: C2CManageEvent):
         user_openid = event.user_openid
@@ -137,8 +182,9 @@ class MyBot(botpy.Client):
             msg = ''
             for id in ids:
                 msg += f'<@{id}>'
-                await add_data('./json/ban.json',id,group_openid)
+                await add_data(file=ban_json_file,item=id,chat_type=group_openid)
             await message.reply(msg_type=2,markdown={'content':await self.get_msg(group_openid,f'以封禁'+ msg, 1)})
+
         elif "/deban" in content and user_openid == 'BA74A884C1DF8E78BFDAF8609AA84099':
             content = content.replace('/ban', '')
 
@@ -146,8 +192,21 @@ class MyBot(botpy.Client):
             msg = ''
             for id in ids:
                 msg += f'<@{id}>'
-                await remove_data('./json/ban.json',id,group_openid)
+                await remove_data(ban_json_file,id,group_openid)
             await message.reply(msg_type=2,markdown={'content':await self.get_msg(group_openid,f'以解除封禁'+ msg, 1)})
+
+        elif "/随机音效" == content:
+            try:
+                audio = await random_pick_audio(sound_path)
+                _log.debug(f"音频路径:{audio}")
+                url = await upload_audio_cached(os.path.join(sound_path, audio))
+                _log.debug(f"音频链接:{url}")
+                while True:
+                    resp = await self.api.post_group_file(group_openid=group_openid, file_type=3, url=url, srv_send_msg=True)
+                    if resp:
+                        return
+            except Exception as e:
+                _log.error(e)
 
         # elif "/test" == content:
         #     await self.answer(group_openid, message.id,content)
@@ -163,7 +222,7 @@ class MyBot(botpy.Client):
         #             await message.reply(msg_type=2,markdown={'content':f"掷骰子结果:{r1}+{r2}={r}喵~"},msg_seq=1)
         #     else:
         #         await message.reply(msg_type=2,markdown={'content':f"掷骰子结果:{r1}+{r2}={r}"},msg_seq=1)
-        # elif "/test2" == content:
+        # elif "/test" == content:
         #     imgs, title, push_time, _ = await self.get_p_pic()
         #     msg = ''
         #     for img in imgs:
@@ -171,7 +230,8 @@ class MyBot(botpy.Client):
         #         await self.api.post_group_file(group_openid=group_openid, file_type=1,url=img['url'],srv_send_msg=True)
            
         #     msg += f"<qqbot-at-user id=\"{user_openid}\" />\n标题:{title}\n发布时间{push_time}\n"
-        #     await message.reply(msg_type=2,markdown={'content':msg},keyboard=self.cos_again_menu)
+        #     resp = await message.reply(msg_type=2,markdown={'content':msg, 'force_verify_image_resource':True},keyboard=self.cos_again_menu)
+        #     print(resp)
             
         else:
             #content = await AIrequest("POST", "https://qianfan.baidubce.com/v2/chat/completions", content)
@@ -238,7 +298,7 @@ class MyBot(botpy.Client):
                                         keyboard = self.main_menu,
                                         msg_id = event_id)
 
-        await add_data(data=group_openid, file=chat_json_file, chat_type=1)
+        await add_data(item=group_openid, file=chat_json_file, chat_type=1)
 
     async def on_group_del_robot(self, event: GroupManageEvent):
         group_openid = event.group_openid
@@ -289,13 +349,13 @@ class MyBot(botpy.Client):
                 elif data == 'bot_kards':
                     await self.api.post_group_message(group_openid=group_openid,
                                                     msg_type=2,
-                                                    markdown={'content':await self.get_msg(id=group_openid, msg=f"请在私聊中使用<qqbot-at-user id=\"{user_id}\" />", chat_type=1)},
+                                                    markdown={'content':await self.get_msg(id=group_openid, msg=f"请在私聊中使用<qqbot-at-user id=\"{user_id}\" />", chat_type=0)},
                                                     keyboard = self.main_menu)
 
             elif interaction.chat_type == 2:
                 user_openid = interaction.user_openid
                 data = interaction.data.resolved.button_id
-                await add_data(data=user_openid, file=chat_json_file, chat_type=0)
+                await add_data(item=user_openid, file=chat_json_file, chat_type=0)
                 _log.info(f"{user_openid}按下{data},时间{time.time()}")
                 await self.c2c_interaction(user_openid, data)
 
@@ -311,24 +371,24 @@ class MyBot(botpy.Client):
                 # ======================
                 # 禁止 time.sleep()！必须 await asyncio.sleep
                 # ======================
-                with open("../json/cos_all.json", "r", encoding="utf-8") as f:
+                with open(os.path.join(BASE_DIR, 'json', 'cos_all.json'), "r", encoding="utf-8") as f:
                     self.cos_data = json.load(f)
                 # 读取菜单
-                with open("../json/menu.json", "r", encoding="utf-8") as f:
+                with open(os.path.join(BASE_DIR, 'json', 'menu.json'), "r", encoding="utf-8") as f:
                     self.main_menu = json.load(f)
-                with open("../json/repeater_menu.json", "r", encoding="utf-8") as f:
+                with open(os.path.join(BASE_DIR, 'json', 'repeater_menu.json'), "r", encoding="utf-8") as f:
                     self.repeater_menu = json.load(f)
-                with open("../json/cos_again_menu.json", "r", encoding="utf-8") as f:
+                with open(os.path.join(BASE_DIR, 'json', 'cos_again_menu.json'), "r", encoding="utf-8") as f:
                     self.cos_again_menu = json.load(f)
-                with open("../json/cos_tips_again_menu.json", "r", encoding="utf-8") as f:
+                with open(os.path.join(BASE_DIR, 'json', 'cos_tips_again_menu.json'), "r", encoding="utf-8") as f:
                     self.cos_tips_again_menu = json.load(f)
-                with open("../json/kards.json", "r", encoding="utf-8") as f:
+                with open(os.path.join(BASE_DIR, 'json', 'kards.json'), "r", encoding="utf-8") as f:
                     self.kards_menu = json.load(f)
-                with open("../json/ban.json", "r", encoding="utf-8") as f:
+                with open(os.path.join(BASE_DIR, 'json', 'ban_list.json'), "r", encoding="utf-8") as f:
                     self.ban_id = json.load(f)
             except Exception as e:
                 # 捕获异常，防止任务崩溃导致整个定时终止
-                print(f"定时任务异常: {e}")
+                _log.error(f"定时任务异常: {e}")
                 
             await asyncio.sleep(interval)
 
@@ -600,7 +660,7 @@ class MyBot(botpy.Client):
                     _log.info("内容获取失败：评级过大")
     
         title = illust.title
-        time = illust.create_date
+        create_time = illust.create_date
         urls = []
         _log.info(f"评级:{illust.sanity_level}")
         if illust.meta_single_page:
@@ -615,24 +675,59 @@ class MyBot(botpy.Client):
     
         # 循环遍历所有分页，逐页打印尺寸
         imgs = []
-        for idx, url in enumerate(urls):
-            w, h = await self.get_img_size(url)
-            _log.info(f"第p{idx}页原图真实尺寸：{w} × {h}")
-            imgs.append({'url':url,'width':w, 'height':h})
-    
-        return imgs, title, time, illust
 
-    async def get_img_size(self,url):
-        headers = {"Referer":"https://www.pixiv.net/","User-Agent":"Mozilla/5.0"}
+        illust_id = illust.id
+        for idx, url in enumerate(urls):
+            ext = url.split(".")[-1].split("?")[0]
+            save_name = f"{illust_id}_p{idx}.{ext}"
+            save_full_path = os.path.join(p_path, save_name)
+            ok = await self.download_pixiv_image(save_full_path, url)
+            if not ok:
+                _log.warning(f"第p{idx} 图片下载失败，跳过")
+                continue
+
+            try:
+                # 2.上传图床（使用本地文件）
+                img_url = await upload_image_cached(save_full_path)
+                _log.info(f"{img_url=}")
+                # 3.读取本地图片宽高（不再请求pixiv外网链接）
+                w, h = await self.get_img_size_local(save_full_path)
+                _log.info(f"第p{idx} 尺寸 {w} × {h} | 图床链接：{img_url}")
+                imgs.append({'url': img_url, 'width': w, 'height': h})
+            except Exception as e:
+                _log.error(f"第p{idx} 上传/获取尺寸异常：{e}")
+                continue
+        return imgs, title, create_time, illust
+
+    async def download_pixiv_image(self,save_path: str, img_url: str) -> bool:
         try:
-            resp = requests.get(url, headers=headers, proxies=proxies, timeout=15)
-            img = Image.open(BytesIO(resp.content))
-            return img.size # (宽,高)
+            resp = pixiv_download_session.get(
+                img_url,
+                headers=PIXIV_HEADERS,
+                timeout=30
+            )
+            resp.raise_for_status()
+            with open(save_path, "wb") as f:
+                f.write(resp.content)
+            return True
         except Exception as e:
-            print("读取尺寸失败：",e)
-            return None
+            _log.error(f"图片下载失败 {img_url} | {e}")
+            return False
+
+    async def get_img_size_local(self, file_path: str):
+        def _inner():
+            with Image.open(file_path) as img:
+                return img.width, img.height
+        return await asyncio.to_thread(_inner)
 
 if __name__ == "__main__":
+
+        # 实例化API
+    # p_api = AppPixivAPI()
+    # # 覆盖内置请求对象
+    # p_api.requests = PixivProxySession()
+    # # 登录
+    # p_api.auth(refresh_token=refresh_token_str)
     intents = botpy.Intents(public_messages=True,
                             public_guild_messages=True,
                             interaction=True)

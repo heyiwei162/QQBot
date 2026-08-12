@@ -6,7 +6,7 @@
                 "id": "bot_say_hello",
                 "render_data": {
                     "label": "问好",
-                    "style": 0
+                    "style": 4
                 },
                 "action": {
                     "type": 1,
@@ -21,7 +21,7 @@
                 "id": "bot_random_cos_tips",
                 "render_data": {
                     "label": "随机C帖",
-                    "style": 0
+                    "style": 4
                 },
                 "action": {
                     "type": 1,
@@ -30,13 +30,12 @@
                     },
                 "data": "/随机C帖"
                 }
-            }]},
+            },
             {
-            "buttons":[{
                 "id": "bot_random_cos",
                 "render_data": {
                     "label": "随机C图",
-                    "style": 0
+                    "style": 4
                 },
                 "action": {
                     "type": 1,
@@ -46,6 +45,7 @@
                 "data": "/随机C图"
                 }
             }]},
+            
             {
             "buttons":[{
                 "id": "bot_return",
@@ -60,22 +60,37 @@
                     },
                 "data": "/复读机"
                 }
-            }]},
+            },
             {
-            "buttons":[{
                 "id": "bot_kards",
                 "render_data": {
                     "label": "kards指挥点帮助",
                     "style": 0
                 },
                 "action": {
-                    "type": 1,
+                    "type": 2,
                     "permission": {
                         "type": 2
                     },
                 "data": "/kards"
                 }
-            }]}
+            },
+            {
+                "id": "bot_ramdom_audio",
+                "render_data": {
+                    "label": "随机音效",
+                    "style": 0
+                },
+                "action": {
+                    "type": 2,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/随机音效"
+                }
+            }]},
+            {
+            "buttons":[]}
         ]
     }
 }
