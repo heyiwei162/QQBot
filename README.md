@@ -59,7 +59,7 @@
 
 ### 1. 安装依赖
 ```bash
-pip install botpy
+pip install -r requirements.txt
 ```
 ### 2. 平台配置
 前往【QQ 开放平台】创建机器人应用，获取 AppID、AppSecret；  <br>

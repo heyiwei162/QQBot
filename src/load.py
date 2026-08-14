@@ -4,7 +4,6 @@ import os
 import asyncio
 import random
 import hashlib
-import time
 from botpy.client import _log
 
 from config import BASE_DIR

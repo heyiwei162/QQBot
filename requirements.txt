@@ -1,0 +1,5 @@
+botpy>=1.4.0
+pixivpy3>=2.2.10
+pillow>=10.0.0
+requests>=2.31.0
+aiohttp>=3.9.0
