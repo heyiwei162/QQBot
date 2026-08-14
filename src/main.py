@@ -19,7 +19,7 @@ import os
 from config import BASE_DIR
 from save import *
 #from AI import *
-from upload import *
+from load import *
 from search import search_by_text
 
 # Pixiv 请求头（缺一容易403）
@@ -27,6 +27,7 @@ PIXIV_HEADERS = {
     "Referer": "https://www.pixiv.net/",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
+MAX_READ_SIZE = 180 * 1024 * 1024  # 180MB
 # 仅图片下载使用这个带代理的session
 pixiv_download_session = requests.Session()
 proxies = {"http":"http://127.0.0.1:12334","https":"http://127.0.0.1:12334"}
@@ -53,9 +54,6 @@ class PixivProxySession:
         kwargs["proxies"] = self.proxy
         return self.session.post(url, **kwargs)
 
-
-
- 
 
 MAX_RETRY = 5
 
@@ -108,6 +106,19 @@ class MyBot(botpy.Client):
             content += m
         _log.info(f"消息内容: {content}")
 
+        if message.attachments:
+            attach_list = list(message.attachments)
+            for attach in attach_list:
+                if attach.content_type == 'file':
+                    suffix = os.path.splitext(attach)[1]
+                    if suffix in ['.mp3', '.flac', '.wav']:
+                        path = os.path.join(BASE_DIR, 'audio', attach.filename)
+                        ok = await download_audio_async(attach.url, path)
+                        if ok:
+                            message.reply(content=f'保存成功{attach.filename}')
+                    elif suffix in [".m4a", ".aac", ".ogg", ".opus", ".ape", ".wv", ".wma"]:
+                        message.reply(content=f'不支持的格式,请转为.mp3/.flac/.wav后再试')
+
         # 自动回复
         if "/随机C图" == content:
             await self.send_cos_img(user_openid, 0)
@@ -118,16 +129,16 @@ class MyBot(botpy.Client):
             await message.reply(msg_type = 2,markdown={'content':msg}, keyboard = self.main_menu)
         elif "/随机音效" == content:
             try:
-                audio = await random_pick_audio(sound_path)
-                _log.debug(f"音频路径:{audio}")
-                url = await upload_audio_cached(os.path.join(sound_path, audio))
-                _log.debug(f"音频链接:{url}")
+                audio_path = await random_pick_audio(sound_path)
+                _log.debug(f"音频路径:{audio_path}")
+
                 while True:
-                    resp = await self.api.post_c2c_file(openid=user_openid, file_type=3, url=url, srv_send_msg=True)
-                    if resp:
+                    resp = await self.upload_file_in_parts(openid=user_openid, file_type=3, file_path=audio_path, chat_type=0)
+                    if not resp.get('err_code'):
                         return
             except Exception as e:
                 _log.error(e)
+        
         else:
             await message.reply(msg_type = 2,markdown={'content':"功能"}, keyboard = self.main_menu)
 
@@ -197,17 +208,24 @@ class MyBot(botpy.Client):
 
         elif "/随机音效" == content:
             try:
-                audio = await random_pick_audio(sound_path)
-                _log.debug(f"音频路径:{audio}")
-                url = await upload_audio_cached(os.path.join(sound_path, audio))
-                _log.debug(f"音频链接:{url}")
+                audio_path = await random_pick_audio(sound_path)
+                _log.debug(f"音频路径:{audio_path}")
                 while True:
-                    resp = await self.api.post_group_file(group_openid=group_openid, file_type=3, url=url, srv_send_msg=True)
-                    if resp:
+                    resp = await self.upload_file_in_parts(openid=group_openid, file_type=3, file_path=audio_path, chat_type=1)
+                    if not resp.get('err_code'):
                         return
             except Exception as e:
                 _log.error(e)
+                raise e
 
+        elif "/随机P图" == content:
+            paths, title, push_time, _ = await self.get_p_pic()
+            msg = ''
+            for path in paths:
+                await self.upload_file_in_parts(file_path=path, openid=group_openid, chat_type=1, file_type=1)
+           
+            msg += f"<qqbot-at-user id=\"{user_openid}\" />\n标题:{title}\n发布时间{push_time}\n"
+            resp = await message.reply(msg_type=2,markdown={'content':msg},keyboard=self.cos_again_menu)
         # elif "/test" == content:
         #     await self.answer(group_openid, message.id,content)
         # elif '/test1' == content:
@@ -222,16 +240,6 @@ class MyBot(botpy.Client):
         #             await message.reply(msg_type=2,markdown={'content':f"掷骰子结果:{r1}+{r2}={r}喵~"},msg_seq=1)
         #     else:
         #         await message.reply(msg_type=2,markdown={'content':f"掷骰子结果:{r1}+{r2}={r}"},msg_seq=1)
-        # elif "/test" == content:
-        #     imgs, title, push_time, _ = await self.get_p_pic()
-        #     msg = ''
-        #     for img in imgs:
-        #         #msg += f"![text #{img["width"]}px #{img["height"]}px]({img["url"]})\n"
-        #         await self.api.post_group_file(group_openid=group_openid, file_type=1,url=img['url'],srv_send_msg=True)
-           
-        #     msg += f"<qqbot-at-user id=\"{user_openid}\" />\n标题:{title}\n发布时间{push_time}\n"
-        #     resp = await message.reply(msg_type=2,markdown={'content':msg, 'force_verify_image_resource':True},keyboard=self.cos_again_menu)
-        #     print(resp)
             
         else:
             #content = await AIrequest("POST", "https://qianfan.baidubce.com/v2/chat/completions", content)
@@ -340,6 +348,9 @@ class MyBot(botpy.Client):
                 elif data == 'bot_random_cos_tips':
                     await self.send_cos_tips(group_openid, 1,user_id = user_id)
 
+                elif data == 'bot_random_p':
+                    await self.send_p_img(group_openid, 1, user_id=user_id)
+
                 elif data == 'bot_menu':
                     await self.api.post_group_message(group_openid=group_openid,
                                                     msg_type=2,
@@ -382,6 +393,8 @@ class MyBot(botpy.Client):
                     self.cos_again_menu = json.load(f)
                 with open(os.path.join(BASE_DIR, 'json', 'cos_tips_again_menu.json'), "r", encoding="utf-8") as f:
                     self.cos_tips_again_menu = json.load(f)
+                with open(os.path.join(BASE_DIR, 'json', 'p_again_menu.json'), "r", encoding="utf-8") as f:
+                    self.p_again_menu = json.load(f)
                 with open(os.path.join(BASE_DIR, 'json', 'kards.json'), "r", encoding="utf-8") as f:
                     self.kards_menu = json.load(f)
                 with open(os.path.join(BASE_DIR, 'json', 'ban_list.json'), "r", encoding="utf-8") as f:
@@ -481,7 +494,29 @@ class MyBot(botpy.Client):
                 await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':msg},keyboard=self.cos_again_menu)
             elif chat_type == 1:
                 await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':msg},keyboard=self.cos_again_menu)
-                                
+
+    async def send_p_img(self,openid, chat_type, **kwargs):
+        """
+        发送cos图
+
+        :param openid:发送的openid
+        :param chat_type: 0向私聊发送,1向群聊发送
+        """
+                
+        paths, title, push_time, _ = await self.get_p_pic()
+        msg = ''
+        user_id = kwargs.get("user_id", None)
+        if user_id is not None:
+            msg += f"<qqbot-at-user id=\"{user_id}\" />\n"
+        msg += f"标题:{title}\n发布时间{push_time}\n"
+        for path in paths:
+            await self.upload_file_in_parts(file_path=path, openid=openid, chat_type=chat_type, file_type=1)
+
+        if chat_type == 0:
+            resp = await self.api.post_c2c_message(openid=openid,msg_type=2,markdown={'content':msg},keyboard=self.p_again_menu)
+        elif chat_type == 1:       
+            resp = await self.api.post_group_message(group_openid=openid,msg_type=2,markdown={'content':msg},keyboard=self.p_again_menu)
+                              
     async def repeater(self,message:C2CMessage|GroupMessage,**kwargs):
         content = message.content
         if content == f"<@{self.app_id}>/退出复读机":
@@ -524,11 +559,12 @@ class MyBot(botpy.Client):
 
         elif data == 'bot_random_cos':
             await self.send_cos_img(user_openid, 0)
-            pass
 
         elif data == 'bot_random_cos_tips':
             await self.send_cos_tips(user_openid, 0)
-            pass
+
+        elif data == 'bot_random_p':
+            await self.send_p_img(user_openid, 0)
 
         elif data == 'bot_menu':
             if user_openid in kards_mode['c2c']:
@@ -644,10 +680,14 @@ class MyBot(botpy.Client):
     async def get_p_pic(self):
          # 测试验证
         while True:
-            search_data = p_api.search_illust(word="原神", search_target="partial_match_for_tags")
+            search_data = await asyncio.to_thread(
+                p_api.search_illust,
+                word="原神",
+                search_target="partial_match_for_tags"
+            )
             illust_list = search_data.illusts
             rand_illust = random.choice(illust_list)
-            res = p_api.illust_detail(rand_illust.id)
+            res = await asyncio.to_thread(p_api.illust_detail,rand_illust.id)
             illust = res.illust
     
     
@@ -673,31 +713,23 @@ class MyBot(botpy.Client):
             for page in illust.meta_pages:
                 urls.append(page.image_urls.original)
     
-        # 循环遍历所有分页，逐页打印尺寸
-        imgs = []
 
         illust_id = illust.id
+        paths = []
         for idx, url in enumerate(urls):
             ext = url.split(".")[-1].split("?")[0]
             save_name = f"{illust_id}_p{idx}.{ext}"
             save_full_path = os.path.join(p_path, save_name)
-            ok = await self.download_pixiv_image(save_full_path, url)
-            if not ok:
-                _log.warning(f"第p{idx} 图片下载失败，跳过")
-                continue
+            if not os.path.exists(save_full_path):
+                ok = await self.download_pixiv_image(save_full_path, url)
+                if not ok:
+                    _log.warning(f"第p{idx} 图片下载失败，跳过")
+                    continue
 
-            try:
-                # 2.上传图床（使用本地文件）
-                img_url = await upload_image_cached(save_full_path)
-                _log.info(f"{img_url=}")
-                # 3.读取本地图片宽高（不再请求pixiv外网链接）
-                w, h = await self.get_img_size_local(save_full_path)
-                _log.info(f"第p{idx} 尺寸 {w} × {h} | 图床链接：{img_url}")
-                imgs.append({'url': img_url, 'width': w, 'height': h})
-            except Exception as e:
-                _log.error(f"第p{idx} 上传/获取尺寸异常：{e}")
-                continue
-        return imgs, title, create_time, illust
+            paths.append(save_full_path)
+
+
+        return paths, title, create_time, illust
 
     async def download_pixiv_image(self,save_path: str, img_url: str) -> bool:
         try:
@@ -720,14 +752,114 @@ class MyBot(botpy.Client):
                 return img.width, img.height
         return await asyncio.to_thread(_inner)
 
+    async def upload_file_in_parts(self, file_path, openid, chat_type, file_type):
+        file_full_name = os.path.basename(file_path)
+
+        md5, sha1 = get_file_hash(file_path)
+        md5_10m = get_head_md5_sync(file_path)
+        # 异步获取文件大小，不阻塞事件循环
+        file_size = str(await asyncio.to_thread(os.path.getsize, file_path))
+
+        upload_id = None
+        parts = None
+
+        # 1. 初始化分片任务
+        if chat_type == 0:
+            resp = await self.api.post_c2c_file_prepear(
+                openid=openid,
+                file_type=file_type,
+                file_name=file_full_name,
+                file_size=file_size,
+                md5=md5,
+                sha1=sha1,
+                md5_10m=md5_10m
+            )
+            upload_id = resp['upload_id']
+            parts = resp['parts']
+        elif chat_type == 1:
+            resp = await self.api.post_group_file_prepear(
+                group_openid=openid,
+                file_type=file_type,
+                file_name=file_full_name,
+                file_size=file_size,
+                md5=md5,
+                sha1=sha1,
+                md5_10m=md5_10m
+            )
+            upload_id = resp['upload_id']
+            parts = resp['parts']
+        else:
+            raise ValueError("chat_type 只能为0(私聊)或1(群聊)")
+
+        # 2. 循环上传所有分片
+        offset = 0
+        for p in parts:
+            index = p['index']
+            url = p['presigned_url']
+            blk_sz = int(p['block_size'])
+
+            chunk_bytes = await get_file_chunk(file_path, offset, offset + blk_sz)
+            await upload_chunk(url, chunk_bytes)
+
+            md5_p = hashlib.md5(chunk_bytes).hexdigest()
+
+            if chat_type == 0:
+                await self.api.post_c2c_file_finish(
+                    openid=openid,
+                    upload_id=upload_id,
+                    part_index=index,
+                    block_size=blk_sz,
+                    md5=md5_p
+                )
+            else:
+                await self.api.post_group_file_finish(
+                    group_openid=openid,
+                    upload_id=upload_id,
+                    part_index=index,
+                    block_size=blk_sz,
+                    md5=md5_p
+                )
+            offset += blk_sz
+
+        # =====================
+        # 3. 最终合并接口，增加有限重试（最多重试1次）
+        # =====================
+        max_retry = 1
+        retry_count = 0
+        final_resp = None
+        while retry_count <= max_retry:
+            try:
+                if chat_type == 0:
+                    final_resp = await self.api.post_c2c_file(
+                        openid=openid,
+                        file_type=file_type,
+                        upload_id=upload_id,
+                        srv_send_msg=True
+                    )
+                else:
+                    final_resp = await self.api.post_group_file(
+                        group_openid=openid,
+                        file_type=file_type,
+                        upload_id=upload_id,
+                        srv_send_msg=True
+                    )
+                # 请求成功，跳出循环
+                break
+            except botpy.errors.ServerError as e:
+                err_msg = str(e)
+                if ("40034006" in err_msg or "消息内容违规" in err_msg) and retry_count < max_retry:
+                    return
+                elif ("50015014" in err_msg or "系统繁忙" in err_msg) and retry_count < max_retry:
+                    retry_count += 1
+
 if __name__ == "__main__":
 
         # 实例化API
-    # p_api = AppPixivAPI()
-    # # 覆盖内置请求对象
-    # p_api.requests = PixivProxySession()
-    # # 登录
-    # p_api.auth(refresh_token=refresh_token_str)
+    p_api = AppPixivAPI()
+    # 覆盖内置请求对象
+    p_api.requests = PixivProxySession()
+    # 登录
+    p_api.auth(refresh_token=refresh_token_str)
     intents = botpy.Intents(public_messages=True,
                             public_guild_messages=True,
                             interaction=True)
