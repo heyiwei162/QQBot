@@ -38,15 +38,18 @@
 
 ## 📁 项目目录结构
 ```bash
-├── main.py # 程序入口，全部事件、业务逻辑主文件
-├── cos_all.json # COS 图库本地数据源
+├── src/
+├── ├── main.py # 主程序
+│── ├── AI.py # AI功能支持
+│── ├── music.py # 音乐支持
+│── ├── load.py # 上传支持
+│── ├── pixiv.py # p站支持
+│── ├── save.py # 保存支持
+│── ├── type.py # 类型注解
 ├── json/
-│ ├── menu.json # 主功能菜单按钮配置
-│ ├── repeater_menu.json # 复读机模式按钮菜单
-│ ├── cos_again_menu.json
-│ ├── cos_tips_again_menu.json
-│ ├── p_again_menu.json
-│ ├── setting_menu.json # APPID,APPSECRET存放地
+│ ├── session/ # AI对话文件
+│ ├── *menu.json # 菜单按钮配置
+│ ├── setting.json # KEY存放地
 │ └── ban_list.json
 ├── venv/ # Python 虚拟环境（.gitignore 自动忽略）
 ├── .gitignore # Git 提交忽略配置
@@ -60,6 +63,7 @@
 ### 1. 安装依赖
 ```bash
 pip install -r requirements.txt
+git clone https://gitee.com/a-xing7737/NeteaseCloudMusicApi.git
 ```
 ### 2. 平台配置
 前往【QQ 开放平台】创建机器人应用，获取 AppID、AppSecret；  <br>
@@ -75,7 +79,8 @@ python  <br>
 同步修改代码内全局机器人自身 AppID 常量。  <br>
 ### 3. 启动运行  <br>
 ```bash
-python main.py
+./netease-music-api-windows-x64.exe
+python ./src/main.py
 ```
 📝 群聊可用指令表
 支持两种触发方式：按钮触发 / @机器人 + 指令
@@ -90,11 +95,13 @@ python main.py
 |`/随机C帖`| 随机整套 COS 帖子 |
 |`/随机P图`| 随机整套 P 站图片 |
 |`/随机音效`| 随机动静 |
+|`/点歌`| 点歌 |
 
 ### 🚨 已知特殊改动 & 常见报错说明
 本项目对原生 botpy 源码进行局部二次修改：  <br>
 1.新增 on_message_create 普通消息监听事件  <br>
-2.内置封装 interaction.react() 交互回执接口，解决按钮超时转圈  <br>
+2.内置封装 interaction.react() 交互回执接口 <br>
 3.增加富媒体分片上传接口  <br>
+4.修改log文件  <br>
 ## License  <br>
 仅用于个人学习交流，禁止商用二次分发。  <br>

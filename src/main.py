@@ -9,7 +9,6 @@ from botpy.message import C2CMessage, GroupMessage
 from botpy.manage import GroupManageEvent, C2CManageEvent
 from botpy.interaction import Interaction
 from PIL import Image
-from zai import ZhipuAiClient
 from datetime import datetime, timedelta
 
 import botpy
@@ -111,7 +110,7 @@ class MyBot(botpy.Client):
                 log.error(e)
         
         else:
-            await get_ai_reply(AI_client,message, chat_type=0)
+            await get_ai_reply(message, chat_type=0)
 
     async def on_friend_add(self,event: C2CManageEvent):
         user_openid = event.user_openid
@@ -893,8 +892,6 @@ class MyBot(botpy.Client):
         return f"{t_part}{offset[:3]}:{offset[3:]}"
 
 if __name__ == "__main__":
-
-    AI_client = ZhipuAiClient(api_key=AIAPIKEY)
     intents = botpy.Intents(public_messages=True,public_guild_messages=True,interaction=True)
     QQ_client = MyBot(intents=intents, timeout=60,ext_handlers=True)
     #print("当前handler列表：", log.handlers)
