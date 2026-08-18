@@ -1,0 +1,50 @@
+{
+    "content": {
+        "rows": [
+            {
+            "buttons":[{
+                "id": "bot_return",
+                "render_data": {
+                    "label": "复读机",
+                    "style": 0
+                },
+                "action": {
+                    "type": 2,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/复读机"
+                }
+            },
+            {
+                "id": "bot_kards",
+                "render_data": {
+                    "label": "kards指挥点帮助",
+                    "style": 0
+                },
+                "action": {
+                    "type": 2,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/kards"
+                }
+            }]},
+            {
+            "buttons":[{
+                "id": "bot_menu",
+                "render_data": {
+                    "label": "菜单",
+                    "style": 0
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/菜单"
+                }
+            }]}
+        ]
+    }
+}

@@ -4,9 +4,9 @@ import os
 import asyncio
 import random
 import hashlib
-from botpy.client import _log
+import time
 
-from config import BASE_DIR
+from config import * 
 
 # -------------------------- 配置区 --------------------------
 API_HOST = "https://litterbox.catbox.moe/"  # 替换成你的镜像地址
@@ -65,6 +65,60 @@ async def random_pick_audio(folder: str):
         return None
     return random.choice(files)\
 
+async def upload_json_file_cached(file_path: str) -> str:
+    file_path = os.path.abspath(file_path)
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"文件不存在: {file_path}")
+
+    filename = os.path.basename(file_path)
+    if not filename.lower().endswith(".json"):
+        raise ValueError("仅支持上传 .json 文件")
+
+    cache = load_cache()
+    md5_key = get_file_md5(file_path)
+    now = time.time()
+
+    # 缓存有效直接返回链接
+    if md5_key in cache:
+        item = cache[md5_key]
+        if now - item["upload_ts"] < CACHE_EXPIRE_SEC:
+            return item["url"]
+        del cache[md5_key]
+
+    api_url = f"{API_HOST}/resources/internals/api.php"
+    form_data = aiohttp.FormData()
+    form_data.add_field("reqtype", "fileupload")
+    form_data.add_field("time", EXPIRE_TIME)
+
+    fp = open(file_path, "rb")
+    try:
+        form_data.add_field(
+            "fileToUpload",
+            fp,
+            filename=filename,
+            content_type="application/json"
+        )
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                api_url,
+                data=form_data,
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as resp:
+                result = await resp.text()
+                link = result.strip()
+    finally:
+        fp.close()
+
+    if not link.startswith("http"):
+        raise RuntimeError(f"JSON文件上传失败，返回内容：{link}")
+
+    cache[md5_key] = {
+        "url": link,
+        "upload_ts": now
+    }
+    save_cache(cache)
+    return link
+
 def get_file_hash(file_path: str, block_size: int = 4 * 1024 * 1024):
     md5 = hashlib.md5()
     sha1 = hashlib.sha1()
@@ -93,23 +147,29 @@ async def upload_chunk(presigned_url: str, chunk_bytes: bytes, max_retry: int = 
     headers = {
         "Content-Type": "application/octet-stream"
     }
-    timeout_cfg = aiohttp.ClientTimeout(total=30)
+    timeout_cfg = aiohttp.ClientTimeout(total=60)
 
-    async with aiohttp.ClientSession(timeout=timeout_cfg) as session:
-        async with session.put(
-            presigned_url,
-            data=chunk_bytes,
-            headers=headers
-        ) as resp:
-            resp_body = await resp.read()
-            if resp.status != 200:
-                # 把返回的HTML/错误内容一并抛出，上层能打印
-                raise Exception(
-                    f"分片PUT失败 status={resp.status}, "
-                    f"resp_body={resp_body[:800]}"
-                )
-            return
-
+    for attempt in range(max_retry + 1):
+        try:
+            async with aiohttp.ClientSession(timeout=timeout_cfg) as session:
+                async with session.put(
+                    presigned_url,
+                    data=chunk_bytes,
+                    headers=headers
+                ) as resp:
+                    resp_body = await resp.read()
+                    if resp.status != 200:
+                        raise Exception(
+                            f"分片PUT失败 status={resp.status}, "
+                            f"resp_body={resp_body[:800]}"
+                        )
+                    return
+        except aiohttp.ClientError as e:
+            if attempt >= max_retry:
+                raise Exception(f"分片上传重试{max_retry}次仍然失败: {str(e)}")
+            print(f"分片上传异常，准备重试 {attempt+1}/{max_retry} err={e}")
+            await asyncio.sleep(1.2)
+            
 async def get_file_chunk(file_path: str, start: int, end: int) -> bytes:
     chunk_size = end - start + 1
     # 同步文件读取放在 to_thread，避免阻塞事件循环
@@ -136,10 +196,10 @@ async def download_audio_async(url: str, save_path: str) -> bool:
                 with open(save_path, "wb") as f:
                     async for chunk in resp.content.iter_chunked(8192):
                         f.write(chunk)
-        _log.info(f"音频保存成功: {save_path}")
+        log.info(f"音频保存成功: {save_path}")
         return True
     except Exception as err:
-        _log.info(f"下载异常 {url} : {err}")
+        log.info(f"下载异常 {url} : {err}")
         return False
 
 

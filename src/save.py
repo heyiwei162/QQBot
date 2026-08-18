@@ -1,7 +1,7 @@
 import json
 import os
 import asyncio
-from botpy.client import _log
+from config import * 
 
 # 仅单个数据文件场景，全局锁；多文件请改用锁字典 {filepath: asyncio.Lock()}
 chat_json_lock = asyncio.Lock()
@@ -16,7 +16,7 @@ def load_json_sync(file: str):
         with open(file, "r", encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, Exception):
-        _log.warning(f"文件 {file} 损坏，重置数据")
+        log.warning(f"文件 {file} 损坏，重置数据")
         data = {'c2c': [], 'group': []}
         with open(file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)

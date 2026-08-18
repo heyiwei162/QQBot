@@ -18,9 +18,9 @@
             }]},
             {
             "buttons":[{
-                "id": "bot_random_cos_tips",
+                "id": "bot_pic_menu",
                 "render_data": {
-                    "label": "随机C帖",
+                    "label": "图片菜单",
                     "style": 4
                 },
                 "action": {
@@ -28,83 +28,40 @@
                     "permission": {
                         "type": 2
                     },
-                "data": "/随机C帖"
-                }
-            },
-            {
-                "id": "bot_random_cos",
-                "render_data": {
-                    "label": "随机C图",
-                    "style": 4
-                },
-                "action": {
-                    "type": 1,
-                    "permission": {
-                        "type": 2
-                    },
-                "data": "/随机C图"
-                }
-            },
-             {
-                "id": "bot_random_p",
-                "render_data": {
-                    "label": "随机P图",
-                    "style": 4
-                },
-                "action": {
-                    "type": 1,
-                    "permission": {
-                        "type": 2
-                    },
-                "data": "/随机P图"
+                "data": "/图片菜单"
                 }
             }]},
-            
             {
             "buttons":[{
-                "id": "bot_return",
+                "id": "bot_music_menu",
                 "render_data": {
-                    "label": "复读机",
-                    "style": 0
+                    "label": "声音菜单",
+                    "style": 4
                 },
                 "action": {
-                    "type": 2,
+                    "type": 1,
                     "permission": {
                         "type": 2
                     },
-                "data": "/复读机"
-                }
-            },
-            {
-                "id": "bot_kards",
-                "render_data": {
-                    "label": "kards指挥点帮助",
-                    "style": 0
-                },
-                "action": {
-                    "type": 2,
-                    "permission": {
-                        "type": 2
-                    },
-                "data": "/kards"
-                }
-            },
-            {
-                "id": "bot_ramdom_audio",
-                "render_data": {
-                    "label": "随机音效",
-                    "style": 0
-                },
-                "action": {
-                    "type": 2,
-                    "permission": {
-                        "type": 2
-                    },
-                "data": "/随机音效"
+                "data": "/声音菜单"
                 }
             }]},
             {
-            "buttons":[]}
+            "buttons":[
+                {
+                "id": "bot_other_menu",
+                "render_data": {
+                    "label": "其他菜单",
+                    "style": 0
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/其他菜单"
+                }
+            }]}
         ]
     }
 }

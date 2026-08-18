@@ -1,0 +1,50 @@
+{
+    "content": {
+        "rows": [
+            {
+            "buttons":[{
+                "id": "bot_ramdom_audio",
+                "render_data": {
+                    "label": "随机音效",
+                    "style": 0
+                },
+                "action": {
+                    "type": 2,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/随机音效"
+                }
+            },
+            {
+                "id": "bot_music",
+                "render_data": {
+                    "label": "点歌",
+                    "style": 0
+                },
+                "action": {
+                    "type": 2,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/点歌"
+                }
+            }]},
+            {
+            "buttons":[{
+                "id": "bot_menu",
+                "render_data": {
+                    "label": "菜单",
+                    "style": 0
+                },
+                "action": {
+                    "type": 1,
+                    "permission": {
+                        "type": 2
+                    },
+                "data": "/菜单"
+                }
+            }]}
+        ]
+    }
+}
