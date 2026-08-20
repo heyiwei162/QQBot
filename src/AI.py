@@ -58,22 +58,34 @@ async def get_ai_reply(message:GroupMessage|C2CMessage, chat_type):
 
     # 处理@携带会话文件
     ids = re.findall(r"<@([^>]+)>", content)
-    content_arr = []
+    extra_text = ""
     for openid_tag in ids:
         file_path = get_session_path(openid_tag)
         if os.path.isfile(file_path):
-            url = await upload_json_file_cached(file_path)
-            content_arr.append({"type": "file_url", "file_url": {"url": url}})
-    content_arr.append({"type": "text", "text": content})
+            try:
+                with open(file_path,"r",encoding="utf-8") as f:
+                    json_text = f.read()
+                extra_text += f"\n【附加历史会话文件内容】\n{json_text}\n"
+            except Exception as e:
+                log.warning(f"读取会话文件失败 {file_path}: {e}")
+
+    # 直接拼接普通字符串，不要数组！
+    final_user_text = extra_text + content
 
     chat_msgs = load_chat_session(user_openid)
-    chat_msgs.append({"role": "user", "content": content_arr})
+    if not chat_msgs:
+        chat_msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    # 裁剪上下文，保留system
+    # ✅ content 直接是字符串，不是list，关闭多模态解析，不会误判斜杠
+    chat_msgs.append({"role": "user", "content": final_user_text})
+
+    # 裁剪上下文
     if len(chat_msgs) > MAX_HISTORY:
         chat_msgs = [chat_msgs[0]] + chat_msgs[-(MAX_HISTORY - 1):]
 
+
     ai_text = None
+    log.debug(f"发送给大模型 messages={chat_msgs}")
     try:
         resp = await client.chat.completions.create(
             model="glm-4.6v-flash",

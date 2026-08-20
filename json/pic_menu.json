@@ -15,33 +15,35 @@
                     },
                 "data": "/随机C帖"
                 }
-            },
+            }]},
             {
-                "id": "bot_random_cos",
-                "render_data": {
-                    "label": "随机C图",
-                    "style": 4
-                },
-                "action": {
-                    "type": 1,
-                    "permission": {
-                        "type": 2
+                "buttons":[{
+                    "id": "bot_random_cos",
+                    "render_data": {
+                        "label": "随机C图",
+                        "style": 4
                     },
-                "data": "/随机C图"
+                    "action": {
+                        "type": 1,
+                        "permission": {
+                            "type": 2
+                        },
+                    "data": "/随机C图"
                 }
-            },
-             {
-                "id": "bot_random_p",
-                "render_data": {
-                    "label": "随机P图",
-                    "style": 4
-                },
-                "action": {
-                    "type": 1,
-                    "permission": {
-                        "type": 2
+            }]},
+            {
+                "buttons":[{
+                    "id": "bot_random_p",
+                    "render_data": {
+                        "label": "随机P图",
+                        "style": 4
                     },
-                "data": "/随机P图"
+                    "action": {
+                        "type": 1,
+                        "permission": {
+                            "type": 2
+                        },
+                    "data": "/随机P图"
                 }
             }]},
             {

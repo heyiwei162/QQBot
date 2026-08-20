@@ -64,6 +64,12 @@
 ```bash
 pip install -r requirements.txt
 git clone https://gitee.com/a-xing7737/NeteaseCloudMusicApi.git
+cd ./NeteaseCloudMusicApi
+npm config set registry https://registry.npmmirror.com
+npm cache clean --force
+Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
+Remove-Item package-lock.json -ErrorAction SilentlyContinue
+npm install
 ```
 ### 2. 平台配置
 前往【QQ 开放平台】创建机器人应用，获取 AppID、AppSecret；  <br>
@@ -79,7 +85,7 @@ python  <br>
 同步修改代码内全局机器人自身 AppID 常量。  <br>
 ### 3. 启动运行  <br>
 ```bash
-./netease-music-api-windows-x64.exe
+node ./NeteaseCloudMusicApi/app.js
 python ./src/main.py
 ```
 📝 群聊可用指令表

@@ -5,11 +5,12 @@ from load import *
 from pixiv import *
 from music import *
 
-from botpy.message import C2CMessage, GroupMessage
-from botpy.manage import GroupManageEvent, C2CManageEvent
-from botpy.interaction import Interaction
+from botpy.message import *
+from botpy.manage import *
+from botpy.interaction import *
 from PIL import Image
 from datetime import datetime, timedelta
+from typing import List
 
 import botpy
 import re
@@ -36,13 +37,13 @@ kards_mode = {'c2c':{},'group':{}}
 song_event: dict[int, List[Music]] = {}
 song_event_lock = asyncio.Lock()
 song_id = 0
+song_step = 8
 
 with open(os.path.join(BASE_DIR,"json","setting.json"), "r", encoding="utf-8") as f:
     data = json.load(f)
     APPID = data.get("APPID")
     APPSECRET = data.get("APPSECRET")
-    AIAPIKEY = data.get("AIAPIKEY")
-
+    
 class MyBot(botpy.Client):
     async def on_ready(self):
         log.info("机器人上线成功，等待私聊消息...")
@@ -64,7 +65,18 @@ class MyBot(botpy.Client):
         if not self.app_id:
             self.app_id = "726B489C13804741B9AD1DCA6879CC45"
         log.info(f"app_id获取结果{self.app_id}")
-  
+
+    async def on_close(self, code: int, reason: str):
+        log.warning(f"【机器人下线】连接关闭 code:{code} 原因:{reason}")
+        if self.http_session and not self.http_session.closed:
+            await self.http_session.close()
+        users = await get_all_data(file=chat_json_file, chat_type=0)
+        groups = await get_all_data(file=chat_json_file, chat_type=1)
+        for id in users:
+            pass
+        for id in groups:
+            pass
+        
     async def on_c2c_message_create(self, message: C2CMessage):
         user_openid = message.author.user_openid
         log.info(f"user_openid: {user_openid}")
@@ -161,17 +173,19 @@ class MyBot(botpy.Client):
             msg = await self.get_msg(id=group_openid, msg="已进入复读机,键入 /退出复读机 来退出", chat_type=1)
             await message.reply(msg_type=2,markdown={'content':msg}, keyboard = self.repeater_menu)
         elif content.startswith("/点歌"):
-            raw_arg = abs_content[len("/点歌"):]
+            raw_arg = abs_content.replace('/点歌','')
             song_key = raw_arg.strip()
             if not song_key:
-                await message.reply(msg_type=2,markdown={'content':'格式错误,格式为<qqbot-cmd-input text="/点歌 七里香" show="@少女 /点歌 歌名" reference="false" />'})
+                await message.reply(msg_type=2,markdown={'content':f'<@{user_openid}>c格式错误,格式为<qqbot-cmd-input text="/点歌 七里香" show="@少女 /点歌 歌名" reference="false" />'})
                 return
 
             global song_id
             song_id += 1 
-            msg, keyboard, song_info = await get_songs_keyboard(self.http_session,song_key, song_id)
-            song_event[song_id] = song_info
-            await message.reply(msg_type=2, markdown={"content":msg}, keyboard=keyboard)
+            song_info = await search_song(self.http_session, song_key)
+            msg, keyboard = await get_songs_keyboard(song_info,song_id, 1, 8)
+            final_msg = f'<@{user_openid}>\n' + msg
+            song_event[song_id] = {'info':song_info,'start':1, 'end':8}
+            await message.reply(msg_type=2, markdown={"content":final_msg}, keyboard=keyboard)
 
             
         elif "/ban" in content and user_openid == 'BA74A884C1DF8E78BFDAF8609AA84099':
@@ -186,7 +200,7 @@ class MyBot(botpy.Client):
             await message.reply(msg_type=2,markdown={'content':await self.get_msg(group_openid,f'以封禁'+ msg, 1)})
 
         elif "/deban" in content and user_openid == 'BA74A884C1DF8E78BFDAF8609AA84099':
-            content = content.replace('/ban', '')
+            content = content.replace('/deban', '')
 
             ids = re.findall(r"<@([^>]+)>", content)
             msg = ''
@@ -216,7 +230,7 @@ class MyBot(botpy.Client):
         #         await self.upload_file_in_parts(file_path=path, openid=group_openid, chat_type=1, file_type=1)
            
         #     msg += f"\n标题:{title}\n发布时间{push_time}\n"
-            resp = await message.reply(msg_type=2,markdown={'content':msg},keyboard=self.cos_again_menu)
+        #    resp = await message.reply(msg_type=2,markdown={'content':msg},keyboard=self.cos_again_menu)
         # elif "/test" == content:
         #     await self.answer(group_openid, message.id,content)
         # elif '/test1' == content:
@@ -305,29 +319,18 @@ class MyBot(botpy.Client):
         op_member = event.op_member_openid
         event_id = event.event_id
         log.info(f"机器人退群,群ID: {group_openid}")
-        await remove_data(data=group_openid, file=chat_json_file, chat_type=1)
+        await remove_data(item=group_openid, file=chat_json_file, chat_type=1)
 
-    async def on_group_member_add(self, event: GroupManageEvent):
+    async def on_group_member_add(self, event: MemberManageEvent):
         group_openid = event.group_openid
         user_openid = event.member_openid
         await add_data(item=user_openid, file=chat_json_file, chat_type=1)
-        self.api.post_group_message(group_openid=group_openid, content='欢迎新人')
+        await self.api.post_group_message(group_openid=group_openid, content='欢迎新人')
 
-    async def on_group_member_remove(self, event: GroupManageEvent):
+    async def on_group_member_remove(self, event: MemberManageEvent):
         group_openid = event.group_openid
         user_openid = event.member_openid
         await remove_data(item=user_openid, file=chat_json_file, chat_type=1)
-
-    async def on_close(self, code: int, reason: str):
-        log.warning(f"【机器人下线】连接关闭 code:{code} 原因:{reason}")
-        users = await get_all_data(file=chat_json_file, chat_type=0)
-        groups = await get_all_data(file=chat_json_file, chat_type=1)
-        for id in users:
-            pass
-            #await asyncio.to_thread(send_c2c_only_message,id,"重启中...")
-        for id in groups:
-            pass
-            #await asyncio.to_thread(send_group_with_button,id,"重启中...")
 
     async def on_interaction_create(self, interaction:Interaction):
         await interaction.react()
@@ -383,48 +386,80 @@ class MyBot(botpy.Client):
                                                     markdown={'content':await self.get_msg(id=group_openid, msg=f"请在私聊中使用<qqbot-at-user id=\"{user_id}\" />", chat_type=0)},)
 
                 elif data.startswith('bot_music_choose'):
-
                     parts = data.split("_")
                     song_id = int(parts[-2])
                     choose_id = int(parts[-1])
 
                     async with song_event_lock:
-                        if song_id not in song_event:
-                            self.api.post_group_message(group_openid=group_openid, content='请重新点歌')
-                        song_info = song_event[song_id]
-                        # 修复：按钮序号从1开始，列表下标从0开始！
+                        song_info = song_event[song_id]['info']
+                        if choose_id == 999999:
+                            # 翻页，处理完直接return，禁止往下执行歌曲选择
+                            start = song_event[song_id]['start'] + song_step
+                            end = song_event[song_id]['end'] + song_step
+                            song_event[song_id] = {'info':song_info,'start': start, 'end':end}
+                            msg, keyboard = await get_songs_keyboard(song_info,song_id, start, end)
+                            final_msg = f'<@{user_id}>' + msg
+                            await self.api.post_group_message(group_openid=group_openid, msg_type=2, markdown={"content":final_msg}, keyboard=keyboard)
+                            return
+
                         target_idx = choose_id - 1
                         if not (0 <= target_idx < len(song_info)):
                             return
                         song = song_info[target_idx]
-                        # 使用完毕立刻清理缓存
-                        song_event.pop(song_id, None)
 
-                    # 开始下载歌曲，复用全局session
-                    track_name = sanitize_filename(song.name)
-                    artists = sanitize_filename(song.artist_string)
-                    os.makedirs(SAVE_ROOT, exist_ok=True)
-                    save_path = os.path.join(SAVE_ROOT, f"{track_name} - {artists}.mp3")
-                    url = await get_song_url(self.http_session, song.id)
-                    await download_single(self.http_session, url, save_path)
+                        # 获取歌曲url
+                        item = await get_song_url(self.http_session, song.id)
+                        if not item:
+                            await self.api.post_group_message(group_openid=group_openid,
+                                                            markdown={'content':f"<@{user_id}>\n未找到歌曲或无法获取音源链接，可能是VIP歌曲无权限"},
+                                                            msg_seq=1)
+                            return
 
-                    log.info(save_path)
-                    if not save_path:
-                        await self.api.post_group_message(group_openid=group_openid,content="未找到歌曲或无法获取音源链接", msg_seq=1)
-                        return
-                    await self.api.post_group_message(group_openid=group_openid,msg_type=2,markdown={'content':f'正在下载歌曲:\n名称:{song.name}\n歌手:{song.artists}'}, msg_seq=1)
-                    resp = await self.upload_file_in_parts(file_path=save_path, openid=group_openid, chat_type=1, file_type=3)
-                    if resp:
-                        await self.api.post_group_message(group_openid=group_openid,msg_type=7,media={'file_info':resp['file_info']}, msg_seq=2)
-                    else:
-                        await self.api.post_group_message(group_openid=group_openid,content='发送失败', msg_seq=2)
+                        track_name = sanitize_filename(song.name)
+                        artist_str = ""
+                        for artist in song.artists:
+                            artist_str += f"{artist.name} "
+                        artists = sanitize_filename(artist_str)
+                        os.makedirs(SAVE_ROOT, exist_ok=True)
+                        # 使用接口返回真实后缀 flac / mp3
+                        audio_suffix = item.type or "mp3"
+                        save_path = os.path.join(SAVE_ROOT, f"{track_name} - {artists}.{audio_suffix}")
+                        audio_url = item.url
 
-                elif interaction.chat_type == 2:
-                    user_openid = interaction.user_openid
-                    data = interaction.data.resolved.button_id
-                    await add_data(item=user_openid, file=chat_json_file, chat_type=0)
-                    log.info(f"{user_openid}按下{data},时间{time.time()}")
-                    await self.c2c_interaction(user_openid, data)
+                        await self.api.post_group_message(group_openid=group_openid,
+                                                        msg_type=2,
+                                                        markdown={'content':f'<@{user_id}>\n正在下载歌曲:\n名称:{song.name}\n歌手:{artists}'},
+                                                        msg_seq=1)
+
+                        # 调用下载，接收成功标记
+                        download_ok = await download_single(self.http_session, audio_url, save_path)
+                        if not download_ok:
+                            await self.api.post_group_message(group_openid=group_openid,
+                                                            msg_type=2,
+                                                            markdown={'content':f'<@{user_id}>\n歌曲下载失败'},
+                                                            msg_seq=2)
+                            return
+
+                        log.info(f"歌曲本地路径: {save_path}")
+                        resp = await self.upload_file_in_parts(file_path=save_path, openid=group_openid, chat_type=1, file_type=3)
+                        if not resp:
+                            resp = await self.upload_file_in_parts(file_path=save_path, openid=group_openid, chat_type=1, file_type=3)
+                            if not resp:
+                                await self.api.post_group_message(group_openid=group_openid,
+                                                                markdown={'content':f'<@{user_id}>\n音频上传失败'},
+                                                                msg_seq=2)
+                                return
+
+                        await self.api.post_group_message(group_openid=group_openid,
+                                                        msg_type=7,
+                                                        media={'file_info':resp['file_info']},
+                                                        msg_seq=2)
+            elif interaction.chat_type == 2:
+                user_openid = interaction.user_openid
+                data = interaction.data.resolved.button_id
+                await add_data(item=user_openid, file=chat_json_file, chat_type=0)
+                log.info(f"{user_openid}按下{data},时间{time.time()}")
+                await self.c2c_interaction(user_openid, data)
 
     # 自定义
 
@@ -775,12 +810,6 @@ class MyBot(botpy.Client):
                             msg += '喵~'
         return msg
 
-    async def get_img_size_local(self, file_path: str):
-        def _inner():
-            with Image.open(file_path) as img:
-                return img.width, img.height
-        return await asyncio.to_thread(_inner)
-
     async def upload_file_in_parts(self, file_path, openid, chat_type, file_type):
         file_full_name = os.path.basename(file_path)
 
@@ -880,19 +909,8 @@ class MyBot(botpy.Client):
             print("合并分片服务端错误：", err_msg)
             return None
 
-    async def get_rfc3339_shanghai_no_us(self,offset_minutes: int = 0) -> str:
-        tz = zoneinfo.ZoneInfo("Asia/Shanghai")
-        now = datetime.now(tz)
-        target = now + timedelta(minutes=offset_minutes)
-        # 格式化，先拿到 %z 形式 +0800
-        raw = target.strftime("%Y-%m-%dT%H:%M:%S%z")
-        # 把 +0800 → +08:00
-        t_part = raw[:-5]
-        offset = raw[-5:]
-        return f"{t_part}{offset[:3]}:{offset[3:]}"
-
 if __name__ == "__main__":
-    intents = botpy.Intents(public_messages=True,public_guild_messages=True,interaction=True)
+    intents = botpy.Intents.c2c_and_group()
     QQ_client = MyBot(intents=intents, timeout=60,ext_handlers=True)
     #print("当前handler列表：", log.handlers)
     QQ_client.run(appid=APPID, secret=APPSECRET)
