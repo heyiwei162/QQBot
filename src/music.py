@@ -130,12 +130,12 @@ async def search_song(session: aiohttp.ClientSession, keyword: str) -> List[Musi
     songs = result.get("songs", [])
     if not songs:
         log.debug("[搜索结果] 无歌曲")
-        return None
+        return []
     s = []
     for idx,song in enumerate(songs):
-        if idx >= 20:
-            break
-        s.append(Music(song))
+        m_s = Music(song)
+        if idx < 50 and m_s.duration is not None and m_s.duration <= 300000:
+            s.append(m_s)
     return s
 
 async def get_song_url(session: aiohttp.ClientSession, song_id) -> MusicItem:
