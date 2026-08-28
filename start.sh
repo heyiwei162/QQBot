@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-ln -sf /etc/secrets/cos_all.json /app/json/cos_all.json
 ln -sf /etc/secrets/settings.json /app/json/settings.json
 ln -sf /etc/secrets/pixiv_auth.json /app/json/pixic_auth.json
 
