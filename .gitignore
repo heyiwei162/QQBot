@@ -9,7 +9,8 @@ __pycache__/
 *.pyc
 
 # NeteaseCloudMusicApi npm目录
-/netease_api/
+/netease_api/*
+/netease_api/**
 
 # 日志、音乐、数据目录
 /logs/
