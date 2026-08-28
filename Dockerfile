@@ -5,6 +5,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     git \
+    tesseract-ocr \
+    tesseract-ocr-chi-sim \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

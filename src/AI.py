@@ -1,7 +1,6 @@
 import os
 import json
 import re
-from load import upload_json_file_cached
 from openai import AsyncOpenAI, APIError, RateLimitError
 from botpy.message import C2CMessage, GroupMessage
 

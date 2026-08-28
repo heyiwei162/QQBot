@@ -8,8 +8,6 @@ from music import *
 from botpy.message import *
 from botpy.manage import *
 from botpy.interaction import *
-from PIL import Image
-from datetime import datetime, timedelta
 from typing import List
 
 import botpy
@@ -19,7 +17,6 @@ import random
 import time
 import asyncio
 import os
-import zoneinfo
 
 MAX_RETRY = 5
 
