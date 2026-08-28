@@ -1,0 +1,32 @@
+# venv 虚拟环境
+Include/**
+Lib/**
+Scripts/**
+pyvenv.cfg
+
+# 编译缓存
+__pycache__/
+*.pyc
+
+# NeteaseCloudMusicApi npm目录
+/netease_api/
+
+# 日志、音乐、数据目录
+/logs/
+/music/
+/data/
+/local_secrets/
+
+# json 敏感配置
+/json/session/
+/json/setting.json
+/json/pixiv_auth.json
+
+# 保留 cos_all.json 不忽略（你注释掉的那行）
+#/json/cos_all.json
+
+# 无关图片、测试脚本
+ciallo.png
+example.jpg
+cos.py
+test.py
