@@ -6,8 +6,7 @@ import json
 from typing import List
 
 from config import *
-
-API_BASE = "http://127.0.0.1:3000"
+API_BASE = os.getenv("API_BASE", "http://127.0.0.1:3000")
 SAVE_ROOT = os.path.join(BASE_DIR, 'music')
 SEMAPHORE = asyncio.Semaphore(4)
 
@@ -156,7 +155,7 @@ async def get_song_url(session: aiohttp.ClientSession, song_id) -> MusicItem:
 async def download_single(session: aiohttp.ClientSession, url: str, save_path: str):
     if os.path.exists(save_path):
         log.debug(f"已存在，跳过：{os.path.basename(save_path)}")
-        return
+        return True
     async with SEMAPHORE:
         try:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
@@ -166,8 +165,8 @@ async def download_single(session: aiohttp.ClientSession, url: str, save_path: s
                         f.write(chunk)
             log.debug(f"下载完成：{os.path.basename(save_path)}")
             return True
-        except Exception as e:
-            log.error(f"下载失败 {os.path.basename(save_path)}: {str(e)}")
+        except Exception:
+            log.error(f"下载失败 {os.path.basename(save_path)}", exc_info=True)
             return False
 
 async def get_songs_keyboard(song_info, music_id, start, end):

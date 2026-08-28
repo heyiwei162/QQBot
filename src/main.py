@@ -432,8 +432,8 @@ class MyBot(botpy.Client):
                                                         msg_seq=1)
 
                         # 调用下载，接收成功标记
-                        download_ok = await download_single(self.http_session, audio_url, save_path)
-                        if not download_ok:
+                        dl_ok = await download_single(self.http_session,audio_url,save_path)
+                        if not dl_ok:
                             await self.api.post_group_message(group_openid=group_openid,
                                                             msg_type=2,
                                                             markdown={'content':f'<@{user_id}>\n歌曲下载失败'},
