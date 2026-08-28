@@ -9,6 +9,7 @@ from botpy.message import *
 from botpy.manage import *
 from botpy.interaction import *
 from typing import List
+from aiohttp import web
 
 import botpy
 import re
@@ -40,6 +41,22 @@ with open(os.path.join(BASE_DIR,"json","setting.json"), "r", encoding="utf-8") a
     data = json.load(f)
     APPID = data.get("APPID")
     APPSECRET = data.get("APPSECRET")
+
+async def health_check(request):
+    """Render健康检查接口，GET / 返回ok"""
+    return web.Response(text="ok")
+
+async def start_health_server():
+    port = int(os.environ.get("PORT", 8000))
+    app = web.Application()
+    app.add_routes([web.get("/", health_check)])
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, host="0.0.0.0", port=port)
+    await site.start()
+    print(f"✅健康服务已启动 0.0.0.0:{port}")
+    # 永久挂起不退出
+    await asyncio.Event().wait()
     
 class MyBot(botpy.Client):
     async def on_ready(self):
@@ -906,8 +923,14 @@ class MyBot(botpy.Client):
             print("合并分片服务端错误：", err_msg)
             return None
 
-if __name__ == "__main__":
+async def main():
     intents = botpy.Intents.c2c_and_group()
-    QQ_client = MyBot(intents=intents, timeout=60,ext_handlers=True)
-    #print("当前handler列表：", log.handlers)
-    QQ_client.run(appid=APPID, secret=APPSECRET)
+    QQ_client = MyBot(intents=intents, timeout=60, ext_handlers=True)
+
+    await asyncio.gather(
+        start_health_server(),
+        QQ_client.start(appid=APPID, secret=APPSECRET)
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
