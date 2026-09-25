@@ -1,6 +1,4 @@
-import requests
-from PIL import Image
-import pytesseract
+from config import *
 
 # ===================== 配置区 =====================
 API_TOKEN = "bTz2cn3W00SU5K53fuUccP2iYJdbnIgNlAHUCD8ddAuH9cUo2Y9zfmplbbrDZc"

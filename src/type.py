@@ -1,4 +1,5 @@
-from typing import TypedDict
+
+from config import *
 
 class MusicInfo(TypedDict):
     id:str

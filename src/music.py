@@ -1,11 +1,5 @@
-import aiohttp
-import asyncio
-import os
-import re
-import json
-from typing import List
-
 from config import *
+
 API_BASE = os.getenv("API_BASE", "http://127.0.0.1:3000")
 SAVE_ROOT = os.path.join(BASE_DIR, 'music')
 SEMAPHORE = asyncio.Semaphore(4)
@@ -110,7 +104,29 @@ class MusicItem:
             self.userConsumable= data.get("userConsumable",None)
             self.type = data.get("type",None)
             self.ramainTime = data.get("remainTime",None)
-            
+
+def turn(old_path, new_path):
+    log.info("开始转码")
+    cmd = [
+        r"D:\ffmpeg\bin\ffmpeg.exe",
+        "-i", str(old_path),
+        "-c:a", "libmp3lame",
+        "-b:a", "320k",
+        "-y",
+        str(new_path)
+    ]
+    proc = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True
+    )
+
+    if proc.returncode != 0:
+        log.error(f"转码失败 stderr: {proc.stderr}")
+        return False
+    log.info("转码完成")
+    return True
+
 def sanitize_filename(name: str) -> str:
     return re.sub(r'[\\/:*?"<>|]', "_", name)
 
@@ -153,18 +169,26 @@ async def get_song_url(session: aiohttp.ClientSession, song_id) -> MusicItem:
     return MusicItem(item)
 
 async def download_single(session: aiohttp.ClientSession, url: str, save_path: str):
+    p = Path(save_path)
+    s = p.suffix.lower()   # 转小写，兼容 .FLAC/.WAV大写后缀
     if os.path.exists(save_path):
-        log.debug(f"已存在，跳过：{os.path.basename(save_path)}")
-        return True
+        if s not in [".mp3", ".ogg"]:
+            turn(p, p.with_suffix('.mp3'))
+            return str(p.with_suffix('.mp3'))
+        log.info(f"已存在，跳过：{os.path.basename(save_path)}")
+        return save_path
     async with SEMAPHORE:
         try:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                 resp.raise_for_status()
                 with open(save_path, "wb") as f:
                     while chunk := await resp.content.read(131072):
-                        f.write(chunk)
+                        f.write(chunk) 
+            if s not in [".mp3", ".ogg"]:
+                turn(p, p.with_suffix('.mp3'))
+                return str(p.with_suffix('.mp3'))
             log.debug(f"下载完成：{os.path.basename(save_path)}")
-            return True
+            return save_path
         except Exception:
             log.error(f"下载失败 {os.path.basename(save_path)}", exc_info=True)
             return False

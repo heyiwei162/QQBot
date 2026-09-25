@@ -1,6 +1,28 @@
 import os
 import botpy
 import json
+import aiohttp
+import asyncio
+import subprocess
+import random
+import hashlib
+import requests
+import re
+import time
+import pytesseract
+
+from io import BytesIO
+from PIL import Image
+from pathlib import Path
+from typing import List, TypedDict
+from openai import AsyncOpenAI, APIError, RateLimitError
+from pixivpy3 import AppPixivAPI
+from botpy.message import *
+from botpy.manage import *
+from botpy.interaction import *
+from typing import List
+from aiohttp import web
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PIXIV_HEADERS = {

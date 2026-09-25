@@ -1,6 +1,3 @@
-import json
-import os
-import asyncio
 from config import * 
 
 # 仅单个数据文件场景，全局锁；多文件请改用锁字典 {filepath: asyncio.Lock()}

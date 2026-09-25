@@ -1,11 +1,3 @@
-import aiohttp
-import json
-import os
-import asyncio
-import random
-import hashlib
-import time
-
 from config import * 
 
 # -------------------------- 配置区 --------------------------

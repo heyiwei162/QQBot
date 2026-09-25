@@ -5,20 +5,6 @@ from load import *
 from pixiv import *
 from music import *
 
-from botpy.message import *
-from botpy.manage import *
-from botpy.interaction import *
-from typing import List
-from aiohttp import web
-
-import botpy
-import re
-import json
-import random
-import time
-import asyncio
-import os
-
 MAX_RETRY = 5
 
 ciallo_url = "https://ts2.tc.mm.bing.net/th/id/OIP-C.zOuxHjLVBFflqmmOx-6LAAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
@@ -446,8 +432,8 @@ class MyBot(botpy.Client):
                                                         msg_seq=1)
 
                         # 调用下载，接收成功标记
-                        dl_ok = await download_single(self.http_session,audio_url,save_path)
-                        if not dl_ok:
+                        save_path = await download_single(self.http_session,audio_url,save_path)
+                        if not save_path:
                             await self.api.post_group_message(group_openid=group_openid,
                                                             msg_type=2,
                                                             markdown={'content':f'<@{user_id}>\n歌曲下载失败'},

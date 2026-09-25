@@ -1,9 +1,3 @@
-import os
-import json
-import re
-from openai import AsyncOpenAI, APIError, RateLimitError
-from botpy.message import C2CMessage, GroupMessage
-
 from config import *
 
 with open(os.path.join(BASE_DIR, 'AI.txt'), 'r', encoding="utf-8") as f:

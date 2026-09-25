@@ -1,12 +1,4 @@
-from pixivpy3 import AppPixivAPI
 from config import * 
-
-import asyncio
-import requests
-import json
-import random
-import os
-import aiohttp
 
 pixiv_aio_session: aiohttp.ClientSession | None = None
 
@@ -14,7 +6,7 @@ pixiv_aio_session: aiohttp.ClientSession | None = None
 pixiv_path = os.path.join(BASE_DIR,"pixiv")
 
 # 粘贴你从json里提取的refresh_token
-with open('json/pixiv_auth.json', 'r', encoding='utf-8') as f:
+with open(os.path.join(BASE_DIR,'json/pixiv_auth.json'), 'r', encoding='utf-8') as f:
     refresh_token_str = json.load(f)['refresh_token']
 
 # 自定义带代理的请求包装器
